@@ -1,93 +1,106 @@
-# EdgeWander // 时光机随机跳转
+# EdgeWander · 时光机
 
-一台挖自废弃硬盘的浏览器。按下按钮，跳进 Internet Archive 某个被遗忘的 1996-2010 年代网页。
+> 一台挖自废弃硬盘的浏览器 —— 随机穿越回 1996 — 2010 的网页角落。
 
-- ⏳ **随机穿越**：调用 Wayback Machine CDX API，从一份早期互联网种子域名池里随机抽取一个，返回一个真实存档快照
-- 👁 **访客计数**：Upstash Redis `INCR` 支撑真计数，首页顶部跳字显示
-- ✎ **青史留名**：弹窗写入一条 `{name, message}`，持久化到 Redis 列表
-- ✦ **名人堂**：所有留名以漂浮星云形式展示，信号不稳时名字会短暂 glitch
+[English](./README-en.md) · 中文
 
-## 技术栈
+**[放首页顶部的整体截图，展示 CRT 质感、控制条导航、巨大的随机穿越按钮]**
 
-- Next.js 14 (App Router, Edge Runtime for API routes)
-- Tailwind CSS + 自写的 CRT / scanline / glitch CSS
-- Framer Motion（弹窗、解调动画、星云漂浮）
-- Upstash Redis (`@upstash/redis`)
-- 外部：Internet Archive CDX Server
-- 字体：Google Fonts `Press Start 2P` + `VT323`（通过 `next/font` 自托管）
+---
 
-## 本地开发
+## 这是什么
+
+EdgeWander 是一个小小的、视觉向的网页玩具。点一下「随机穿越」，它会把你扔进 Internet Archive 某个被遗忘的角落 —— 一个 GeoCities 主页、2001 年的论坛帖、某人早已停更的 LiveJournal、或者 1999 年的中文门户。每一个目的地都是从 Wayback Machine 里真实拉出的存档快照。
+
+整个站点的外观也被做成那个年代的样子：扫描线、磷光烧屏、闪烁的像素字体、一个 DIP 拨码开关切换语言、一个十字准星鼠标。它不像一个网站，更像一台仍然在房间角落里微微发光的老机器。
+
+---
+
+## 这个项目想讲什么
+
+这个站把你送到的绝大多数网页，都是少年、业余爱好者、和如今早已离线的陌生人在很久以前搭出来的。他们用 blinking GIF、访客计数器、webring、留言簿。然后互联网变「专业」了，这些东西被一并推平。
+
+EdgeWander 是一半博物馆、一半神龛：按下按钮，去拜访一个鬼魂。
+
+这里有两个玩法顺着这种感觉在走：
+
+### 青史留名
+
+**[放「青史留名」弹窗的截图]**
+
+一个留言簿。点首页上那颗锈红色的按钮，输入你的名字（愿意的话再留一句话），提交。所有按过这个按钮的人，会被永远记下。
+
+### 名人堂
+
+**[放名人堂页面的截图，星云漂浮的名字]**
+
+每一个留名都是深色磷光夜空里的一颗星，飘动着，偶尔因为「信号不好」短暂扭曲，然后又稳定下来。签名的人越多，这片夜空就越密。
+
+---
+
+## 一些值得一提的细节
+
+- **无需刷新的双语切换。** 右上角那个小小的 DIP 拨码开关，拨一下整站文案就在中文和英文之间切换 —— 涵盖正文、按钮、错误提示、加载阶段、弹窗、页脚全部字符串。**[放语言切换按钮的特写 + 切换前后对比]**
+
+- **真·访客计数。** Upstash Redis `INCR` 在后端递增一个整数，首页顶部是一个 7 位的像素翻字跳字牌。没有 analytics、没有 tracking —— 只是一个每有人来就 +1 的整数。
+
+- **时光机本质上是一场赛跑。** 按下「穿越」后，前端向 6 个随机老域名同时发起 CDX 查询，最快返回的一个赢，其他直接 abort。从中国大陆到 `web.archive.org` 单次 CDX 可能要 15-50 秒，但六个一起跑，通常 12-18 秒就能命中第一个结果。
+
+- **整站零图片。** 所有复古效果 —— 扫描线、噪点、金属斜边、DIP 开关、鼠标准星、页脚铭牌 —— 全部由 CSS、SVG 和 DOM 拼出来。没有任何贴图、没有预渲染精灵图。整站首屏 JS 大约 140KB。
+
+- **自定义鼠标指针。** 一颗像素十字准星跟着鼠标，后面拖着一条磷光残影。悬停在可交互元素上会切换成磷光绿并收紧成锁定状态。尊重 `prefers-reduced-motion`，触屏设备自动关闭。
+
+**[放鼠标指针特效的截图 / GIF，悬停在按钮上的 "lock" 状态]**
+
+---
+
+## 运行它
+
+线上站点：**[放线上 Vercel 部署链接]**
+
+或者在本地跑 —— 不配任何环境变量也能直接 `npm run dev`，会自动回落到内存 Redis。部署和 Upstash 的完整步骤见 [SETUP.md](./SETUP.md)。
 
 ```bash
+git clone https://github.com/comui520/edgewander.git
+cd edgewander
 npm install
-cp .env.example .env.local   # 留空也能跑，会自动回落到内存存储
 npm run dev
 ```
 
-打开 http://localhost:3000
+然后打开 http://localhost:3000。
 
-> 没配 Upstash 时，计数器和留名会写入一个**进程内 Map**，重启就没。这只是为了让 `npm run dev` 开箱即用，生产必须配 Upstash。
+---
 
-### 常用命令
+## 技术栈
 
-| 命令 | 作用 |
-| ---- | ---- |
-| `npm run dev` | 本地开发，默认 3000 端口 |
-| `npm run build` | 生产构建 |
-| `npm run start` | 运行 `build` 产物 |
-| `npm run lint` | ESLint（next/core-web-vitals 规则） |
-| `npx tsc --noEmit` | TypeScript 类型检查 |
+| 层 | 方案 |
+| --- | --- |
+| 框架 | Next.js 14（App Router） |
+| 运行时 | 所有 API 路由使用 Edge Runtime |
+| 语言 | TypeScript |
+| 样式 | Tailwind CSS + 手写 CSS 负责 CRT 特效 |
+| 动画 | Framer Motion |
+| 字体 | Press Start 2P · VT323（通过 `next/font` 自托管） |
+| 数据库 | Upstash Redis（本地开发透明回落到内存实现） |
+| 存档源 | Internet Archive CDX Server API |
+| 部署 | Vercel |
 
-## 部署到 Vercel
+所有复古效果都是纯 CSS/SVG，不引入任何图片。整套美术大约 500 行 CSS，集中在 [`src/app/globals.css`](./src/app/globals.css)。
 
-1. **把代码推到 GitHub**
-   ```bash
-   git init && git add . && git commit -m "init"
-   gh repo create edgewander --public --source=. --push
-   ```
-   （或者用网页上传）
-2. **到 Vercel 导入项目**：https://vercel.com/new → 选 repo → Framework 会自动识别为 Next.js，其他默认即可
-3. **配置环境变量**（Project Settings → Environment Variables）：
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
-4. 点击 **Deploy**。
+---
 
-## 配置 Upstash Redis
+## 开源协议
 
-1. 登录 https://console.upstash.com → Create Database
-2. 选 **Global** 类型（对 Vercel Edge Runtime 友好），Eviction 关掉
-3. 进入 database → 找到 **REST API** 面板，复制 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`
-4. 粘贴到 `.env.local`（本地）和 Vercel 的环境变量（生产）
-5. 数据结构（自动创建，无需初始化）：
-   - `edgewander:visitors` — String，`INCR` 递增
-   - `edgewander:names` — List，每个元素是 JSON `{name, message, at}`
+本项目使用 **源码公开、非商用** 的协议发布。
 
-## 目录结构（精简版）
+- ✅ 可以克隆、阅读、fork、自托管、修改、分享
+- ✅ 可以用于个人、教育、艺术用途
+- ❌ 不可出售、不可用于商业产品、不可放在付费墙后
 
-```
-src/
-  app/
-    api/{visit,random,names}/route.ts  # 三个 Edge Runtime 接口
-    hall/page.tsx                      # 名人堂（服务端预取 + 客户端星云）
-    page.tsx                           # 首页
-    layout.tsx                         # 全局字体、CRT 叠加层
-    globals.css                        # 所有复古特效的核心
-  components/
-    CrtOverlay.tsx                     # 扫描线 / 噪点 / 暗角
-    TimeMachine.tsx                    # 年份区间 + 随机按钮 + 结果卡片
-    VisitorCounter.tsx                 # 跳字访客计数
-    LeaveNameModal.tsx                 # 「青史留名」弹窗
-    NameSky.tsx                        # 漂浮名字星云
-  lib/
-    redis.ts     # Upstash 客户端 + 内存回落
-    wayback.ts   # CDX 查询 + 重试
-    seeds.ts     # 预置早期域名池（中 / 英 / 日）
-    names.ts     # 输入清洗
-```
+完整条款见 [LICENSE](./LICENSE)。如果你想基于它做商业产品，先开一个 issue 我们聊聊。
 
-## 坑 & 说明
+---
 
-- **CDX 偶尔超时或 429**：`randomArchivedPage` 会随机打乱种子域名并最多试 8 个，任一返回快照即结束。全部失败时 API 返回 503，前端会提示「时光机失联，再试一次」
-- **Edge Runtime**：所有 API 都用 `runtime = "edge"`。`@upstash/redis` 原生支持 Edge；CDX 用 `fetch`，同样 Edge 友好
-- **移动端**：`globals.css` 的媒体查询会在 `max-width: 640px` 时隐藏扫描线、降低噪点强度 —— 像素字体和粗边框仍然保留
-- **计数器去重**：用 `sessionStorage.edgewander:counted` 做本标签页内的单次递增；不同标签页仍各记一次，这是有意的
+## 致谢
+
+由 **[comui520](https://github.com/comui520)** 和 Claude 一起做成。真正的功臣是 Internet Archive，以及无数如今仍能被偶然翻到的 1999 年个人主页的无名作者们。愿他们的访客计数器永远在跳。

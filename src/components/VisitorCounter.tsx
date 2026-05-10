@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * Fires a single POST /api/visit per *browser tab load* (guarded by
@@ -9,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
  * changes.
  */
 export function VisitorCounter() {
+  const { t } = useI18n();
   const [count, setCount] = useState<number | null>(null);
   const prevRef = useRef<string>("");
 
@@ -50,7 +52,7 @@ export function VisitorCounter() {
   return (
     <div className="retro-panel inline-flex items-center gap-3 px-4 py-2">
       <span className="font-pixel text-[0.6rem] tracking-widest text-crt-bone/80">
-        访客计数 / VISITORS
+        {t("counter.label")}
       </span>
       <span
         className="font-pixel text-[1.15rem] text-crt-amber"

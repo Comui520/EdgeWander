@@ -2,8 +2,10 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export function LeaveNameModal() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
@@ -50,7 +52,7 @@ export function LeaveNameModal() {
         className="retro-button retro-button--danger"
         onClick={() => setOpen(true)}
       >
-        ✎ 青史留名 · LEAVE NAME
+        ✎ {t("home.leaveName")}
       </button>
 
       <AnimatePresence>
@@ -74,7 +76,7 @@ export function LeaveNameModal() {
             >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-pixel text-[0.7rem] tracking-widest text-crt-amber">
-                  ▣ 刻下你的名字
+                  {t("modal.title")}
                 </h3>
                 <button
                   type="button"
@@ -87,44 +89,44 @@ export function LeaveNameModal() {
               </div>
 
               <label className="mb-3 block font-terminal text-base text-crt-bone/80">
-                名字 / NAME
+                {t("modal.name")}
                 <input
                   className="retro-input mt-1"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={24}
-                  placeholder="张三"
+                  placeholder={t("modal.namePlaceholder")}
                   autoFocus
                 />
               </label>
 
               <label className="mb-4 block font-terminal text-base text-crt-bone/80">
-                留言 / MESSAGE (可选)
+                {t("modal.message")}
                 <textarea
                   className="retro-input mt-1 h-24 resize-none"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={140}
-                  placeholder="到此一游"
+                  placeholder={t("modal.msgPlaceholder")}
                 />
               </label>
 
               <div className="flex items-center justify-between gap-3">
                 <span className="font-terminal text-sm text-crt-bone/60">
                   {submitting
-                    ? "数据写入中 ... 磁盘卡顿 ▓▓▓"
+                    ? t("modal.status.writing")
                     : status === "ok"
-                    ? "✓ 已刻入历史"
+                    ? t("modal.status.ok")
                     : status === "err"
-                    ? "! 写入失败"
-                    : "按 ESC 或点外部关闭"}
+                    ? t("modal.status.err")
+                    : t("modal.status.idle")}
                 </span>
                 <button
                   type="submit"
                   disabled={!name.trim() || submitting}
-                  className="retro-button !py-2 !px-3 !text-[0.62rem]"
+                  className="retro-button !px-3 !py-2 !text-[0.62rem]"
                 >
-                  {submitting ? "写入中" : "刻碑"}
+                  {submitting ? t("modal.submitting") : t("modal.submit")}
                 </button>
               </div>
             </motion.form>

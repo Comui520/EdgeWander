@@ -57,13 +57,33 @@ body {
 }
 
 .crt-overlay--vignette {
-  box-shadow: inset 0 0 140px 40px rgba(0, 0, 0, 0.85),
-    inset 0 0 400px 120px rgba(0, 0, 0, 0.55);
+  /* Softer vignette: smaller dark ring, falls off earlier. The edges should
+     feel warm-dim, not light-crushed — nav and corner UI must stay legible. */
+  box-shadow: inset 0 0 80px 10px rgba(0, 0, 0, 0.55),
+    inset 0 0 260px 80px rgba(0, 0, 0, 0.35);
   background: radial-gradient(
     ellipse at center,
-    rgba(0, 0, 0, 0) 55%,
-    rgba(0, 0, 0, 0.55) 100%
+    rgba(0, 0, 0, 0) 68%,
+    rgba(0, 0, 0, 0.35) 100%
   );
+}
+
+/* Burn-in: faint amber ghost at the top where old CRTs held a logo too long.
+   This gives the corners *atmosphere* so softening the vignette doesn't
+   leave them feeling empty and modern. */
+.crt-overlay--burnin {
+  background:
+    radial-gradient(
+      ellipse 80% 18% at 50% 0%,
+      rgba(201, 162, 39, 0.12) 0%,
+      rgba(201, 162, 39, 0) 70%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 85% 100%,
+      rgba(107, 142, 90, 0.08) 0%,
+      rgba(107, 142, 90, 0) 70%
+    );
+  mix-blend-mode: screen;
 }
 
 .crt-overlay--scanlines {
@@ -407,4 +427,310 @@ body {
   93% { transform: translate(-2px, 1px) skew(-0.8deg); }
   94% { transform: translate(2px, -1px) skew(0.6deg); }
   95% { transform: translate(-1px, 0) skew(0); }
+}
+
+/* ---------- Control strip (header) ---------- */
+
+/* A brushed-aluminum strip screwed to the top bezel. Exists to make the nav
+   visible without breaking the "physical object" illusion. */
+.control-strip {
+  position: relative;
+  background:
+    linear-gradient(180deg, #4a4432 0%, #2e2a1c 48%, #1f1b12 52%, #2a2518 100%),
+    #2a2518;
+  border: 2px solid #0d0f08;
+  box-shadow:
+    inset 2px 2px 0 #8c7a4e,
+    inset -2px -2px 0 #0d0f08,
+    inset 4px 4px 0 #5a4e30,
+    inset -4px -4px 0 #06060a,
+    0 3px 0 rgba(0, 0, 0, 0.5);
+  padding: 0.45rem 1rem;
+}
+
+/* Brushed metal texture + horizontal grain */
+.control-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.18) 0 1px,
+      rgba(0, 0, 0, 0) 1px 2px
+    );
+  mix-blend-mode: overlay;
+}
+
+/* Screws in the corners to sell the "screwed to the bezel" conceit */
+.control-strip-screw {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d9c9a3 0%, #8c7a4e 40%, #3a3528 100%);
+  box-shadow: inset 0 0 0 1px #0d0f08, 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.control-strip-screw::after {
+  /* minus-head slot */
+  content: "";
+  position: absolute;
+  inset: 4px 1.5px;
+  background: #1a1710;
+  transform: rotate(calc(var(--screw-rot, 25) * 1deg));
+  box-shadow: 0 0 1px #000;
+}
+
+/* A new chip style just for the nav — reads clearly on the metal strip.
+   Same bevel vocabulary as retro-button but with a glassy illuminated face. */
+.nav-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-press-start), "Press Start 2P", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2e4a8;
+  background:
+    linear-gradient(180deg, #2e3624 0%, #1a1d14 100%);
+  border: 2px solid #0d0f08;
+  box-shadow:
+    inset 2px 2px 0 #6b8e5a,
+    inset -2px -2px 0 #0d0f08,
+    inset 4px 4px 0 rgba(107, 142, 90, 0.35),
+    0 0 10px rgba(201, 162, 39, 0.15);
+  text-shadow: 0 0 6px rgba(201, 162, 39, 0.65), 0 1px 0 #000;
+  cursor: pointer;
+  user-select: none;
+  transition: filter 120ms, transform 80ms;
+}
+
+.nav-chip:hover {
+  filter: brightness(1.25) saturate(1.15);
+}
+
+.nav-chip:active {
+  transform: translateY(1px);
+}
+
+/* A blinking "power on" LED beside each nav chip */
+.nav-chip-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c9a227;
+  box-shadow: 0 0 6px #c9a227, 0 0 10px rgba(201, 162, 39, 0.5);
+  animation: led-pulse 2.8s steps(1) infinite;
+}
+.nav-chip-led--green {
+  background: #9bc47a;
+  box-shadow: 0 0 6px #6b8e5a, 0 0 10px rgba(107, 142, 90, 0.5);
+}
+
+@keyframes led-pulse {
+  0%, 70%, 100% { opacity: 1; }
+  72%, 76% { opacity: 0.35; }
+}
+
+/* Active nav chip — deeper seat, amber glow */
+.nav-chip[data-active="true"] {
+  color: #1a1710;
+  background: linear-gradient(180deg, #d9b43a 0%, #a88418 100%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow:
+    inset -2px -2px 0 #f2d06b,
+    inset 2px 2px 0 #5a4210,
+    inset -4px -4px 0 #d9b43a,
+    inset 4px 4px 0 #3a2a08,
+    0 0 12px rgba(201, 162, 39, 0.5);
+}
+
+/* ---------- DIP-switch language toggle ---------- */
+
+/* A two-position slide switch, like you'd find on a 1998 motherboard for
+   jumper settings. The slider physically moves between EN and 中. */
+.dip-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 3px;
+  background: linear-gradient(180deg, #1a1710 0%, #2a2518 100%);
+  border: 2px solid #0d0f08;
+  box-shadow:
+    inset 2px 2px 0 #0a0a04,
+    inset -2px -2px 0 #3e3a25,
+    0 1px 0 rgba(0, 0, 0, 0.5);
+  user-select: none;
+  cursor: pointer;
+  font-family: var(--font-press-start), "Press Start 2P", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+}
+
+.dip-switch-label {
+  padding: 6px 9px;
+  color: #5a4e30;
+  text-shadow: 0 1px 0 #000;
+  transition: color 200ms;
+  z-index: 1;
+  position: relative;
+  min-width: 2.4em;
+  text-align: center;
+}
+
+.dip-switch-label[data-active="true"] {
+  color: #1a1710;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* The physical slider — moves via transform, engraved with dots */
+.dip-switch-slider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: calc(50% - 3px);
+  background:
+    linear-gradient(180deg, #d9c9a3 0%, #8c7a4e 50%, #5a4e30 100%);
+  border: 1px solid #0d0f08;
+  box-shadow:
+    inset 1px 1px 0 #f2e4a8,
+    inset -1px -1px 0 #3a3528,
+    0 1px 2px rgba(0, 0, 0, 0.5);
+  transition: transform 200ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.dip-switch-slider::before {
+  /* engraved grip dots */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 35% 50%, rgba(0, 0, 0, 0.45) 1px, transparent 1.5px),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.45) 1px, transparent 1.5px),
+    radial-gradient(circle at 65% 50%, rgba(0, 0, 0, 0.45) 1px, transparent 1.5px);
+}
+
+.dip-switch[data-pos="1"] .dip-switch-slider {
+  transform: translateX(calc(100% + 3px));
+}
+
+/* ---------- Custom pixel cursor ---------- */
+
+/* The cursor is a real DOM element driven by pointermove. We hide the native
+   cursor only when the custom one is active (it enables itself on pointer
+   devices and disables on touch / reduced-motion). */
+html[data-pixel-cursor="1"],
+html[data-pixel-cursor="1"] * {
+  cursor: none !important;
+}
+
+.pixel-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 200;
+  transform: translate3d(-100px, -100px, 0);
+  will-change: transform;
+  /* No CSS transition — JS lerps the position so it feels heavy but
+     responsive. Transition here would fight the animation loop. */
+}
+
+/* A pixel-drawn reticle (inner dot + crosshair arms + outer box) built
+   entirely from pseudo-elements so there are zero image requests. */
+.pixel-cursor-dot {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 2px;
+  height: 2px;
+  margin: -1px 0 0 -1px;
+  background: #c9a227;
+  box-shadow: 0 0 3px #c9a227, 0 0 6px rgba(201, 162, 39, 0.8);
+}
+
+.pixel-cursor-arm {
+  position: absolute;
+  background: #c9a227;
+  box-shadow: 0 0 3px #c9a227;
+}
+.pixel-cursor-arm--n { top: 0; left: 50%; width: 2px; height: 5px; margin-left: -1px; }
+.pixel-cursor-arm--s { bottom: 0; left: 50%; width: 2px; height: 5px; margin-left: -1px; }
+.pixel-cursor-arm--w { left: 0; top: 50%; width: 5px; height: 2px; margin-top: -1px; }
+.pixel-cursor-arm--e { right: 0; top: 50%; width: 5px; height: 2px; margin-top: -1px; }
+
+.pixel-cursor-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  transition: border-color 120ms, transform 120ms, opacity 120ms;
+}
+
+/* Over interactive elements: ring tightens and turns green (phosphor LOCK) */
+html[data-cursor-state="hover"] .pixel-cursor-ring {
+  border-color: #9bc47a;
+  transform: scale(1.3) rotate(45deg);
+  box-shadow: 0 0 8px rgba(107, 142, 90, 0.7);
+}
+html[data-cursor-state="hover"] .pixel-cursor-dot {
+  background: #9bc47a;
+  box-shadow: 0 0 4px #9bc47a, 0 0 10px rgba(107, 142, 90, 0.8);
+}
+
+/* Mouse-down: ring collapses like a shutter */
+html[data-cursor-state="down"] .pixel-cursor-ring {
+  transform: scale(0.6);
+  border-color: #c92840;
+}
+
+/* Phosphor trail — a second, lagging cursor with lower opacity */
+.pixel-cursor-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  z-index: 199;
+  transform: translate3d(-100px, -100px, 0);
+  background: radial-gradient(circle, rgba(201, 162, 39, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+/* Respect reduced-motion users: no custom cursor, no trail */
+@media (prefers-reduced-motion: reduce) {
+  html[data-pixel-cursor="1"],
+  html[data-pixel-cursor="1"] * {
+    cursor: auto !important;
+  }
+  .pixel-cursor,
+  .pixel-cursor-ghost {
+    display: none;
+  }
+}
+
+/* Mobile / touch: also skip the cursor — the JS won't enable it anyway,
+   but this is belt-and-braces for hybrid touch+mouse Windows tablets. */
+@media (hover: none) {
+  html[data-pixel-cursor="1"],
+  html[data-pixel-cursor="1"] * {
+    cursor: auto !important;
+  }
+  .pixel-cursor,
+  .pixel-cursor-ghost {
+    display: none;
+  }
 }

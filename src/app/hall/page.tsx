@@ -1,7 +1,6 @@
 import { KEYS, store } from "@/lib/redis";
 import type { NameEntry } from "@/lib/names";
-import { LeaveNameModal } from "@/components/LeaveNameModal";
-import { NameSky } from "@/components/NameSky";
+import { HallShell } from "@/components/HallShell";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,36 +54,5 @@ const DEMO_NAMES: NameEntry[] = [
 export default async function HallPage() {
   const { entries, total } = await loadInitialEntries();
   const seed = entries.length > 0 ? entries : DEMO_NAMES;
-
-  return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1
-            className="pixel-title text-[1.15rem] sm:text-[1.5rem]"
-            data-text="HALL OF FAME"
-          >
-            ✧ 名 人 堂 · HALL OF FAME
-          </h1>
-          <p className="mt-2 font-terminal text-lg text-crt-bone/75">
-            每一颗漂浮的星，都曾按下过「青史留名」。信号不稳时他们会短暂扭曲。
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="retro-panel !p-2 font-pixel text-[0.62rem] tracking-widest text-crt-amber">
-            总计 / TOTAL : {total.toString().padStart(5, "0")}
-          </div>
-          <LeaveNameModal />
-        </div>
-      </header>
-
-      <NameSky fallback={seed} />
-
-      {entries.length === 0 && (
-        <p className="font-terminal text-base text-crt-bone/50">
-          * 当前展示为示例数据。第一个真实留名者将永远闪亮。
-        </p>
-      )}
-    </div>
-  );
+  return <HallShell seed={seed} total={total} isEmpty={entries.length === 0} />;
 }

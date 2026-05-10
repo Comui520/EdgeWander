@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 type Pick = {
   url: string;
@@ -11,12 +12,12 @@ type Pick = {
   host: string;
 };
 
-const PRESETS: { label: string; from: number; to: number }[] = [
-  { label: "1996-1999 // 拨号时代", from: 1996, to: 1999 },
-  { label: "2000-2003 // 千禧互联", from: 2000, to: 2003 },
-  { label: "2004-2007 // 博客纪元", from: 2004, to: 2007 },
-  { label: "2008-2010 // Web 2.0 残响", from: 2008, to: 2010 },
-  { label: "1996-2010 // 全域随机", from: 1996, to: 2010 },
+const RANGES: { from: number; to: number; key: string }[] = [
+  { from: 1996, to: 1999, key: "tm.era.1" },
+  { from: 2000, to: 2003, key: "tm.era.2" },
+  { from: 2004, to: 2007, key: "tm.era.3" },
+  { from: 2008, to: 2010, key: "tm.era.4" },
+  { from: 1996, to: 2010, key: "tm.era.5" },
 ];
 
 function formatTimestamp(ts: string): string {
@@ -25,6 +26,7 @@ function formatTimestamp(ts: string): string {
 }
 
 export function TimeMachine() {
+  const { t } = useI18n();
   const [rangeIdx, setRangeIdx] = useState(4);
   const [loading, setLoading] = useState(false);
   const [pick, setPick] = useState<Pick | null>(null);
@@ -34,37 +36,40 @@ export function TimeMachine() {
     setLoading(true);
     setError(null);
     setPick(null);
-    const { from, to } = PRESETS[rangeIdx];
+    const { from, to } = RANGES[rangeIdx];
     try {
       const res = await fetch(`/api/random?from=${from}&to=${to}`, {
         cache: "no-store",
       });
       if (!res.ok) {
-        setError("时光机失联。再试一次。");
+        setError(t("tm.error"));
         return;
       }
       const data = (await res.json()) as Pick;
       setPick(data);
     } catch {
-      setError("连接档案馆失败。再试一次。");
+      setError(t("tm.error.conn"));
     } finally {
       setLoading(false);
     }
-  }, [rangeIdx]);
+  }, [rangeIdx, t]);
+
+  const range = RANGES[rangeIdx];
 
   return (
     <section className="retro-panel">
       <div className="flex flex-col gap-4">
         <h2 className="font-pixel text-[0.78rem] tracking-widest text-crt-amber">
-          选择年份区间 / SELECT ERA
+          {t("tm.title")}{" "}
+          <span className="text-crt-bone/60">{t("tm.titleSub")}</span>
         </h2>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {PRESETS.map((p, i) => {
+          {RANGES.map((r, i) => {
             const active = i === rangeIdx;
             return (
               <button
-                key={p.label}
+                key={r.key}
                 onClick={() => setRangeIdx(i)}
                 className={
                   "retro-button retro-button--ghost !px-3 !py-2 !text-[0.62rem] " +
@@ -80,7 +85,7 @@ export function TimeMachine() {
                 }
               >
                 {active ? "▸ " : "  "}
-                {p.label}
+                {t(r.key)}
               </button>
             );
           })}
@@ -92,11 +97,10 @@ export function TimeMachine() {
             onClick={wander}
             disabled={loading}
           >
-            {loading ? "▓▓ 解调制中 ▓▓" : "▶ 随机穿越"}
+            {loading ? t("tm.wander.loading") : t("tm.wander")}
           </button>
           <p className="font-terminal text-base text-crt-bone/60">
-            点击按钮即随机跳转到一个来自 {PRESETS[rangeIdx].from}-
-            {PRESETS[rangeIdx].to} 的存档网页。
+            {t("tm.caption", { from: range.from, to: range.to })}
           </p>
         </div>
 
@@ -138,13 +142,13 @@ export function TimeMachine() {
             >
               <div className="flex flex-col gap-1">
                 <span className="font-pixel text-[0.62rem] tracking-widest text-crt-green">
-                  ☷ SIGNAL LOCKED — {formatTimestamp(pick.timestamp)}
+                  {t("tm.result.locked", { date: formatTimestamp(pick.timestamp) })}
                 </span>
-                <span className="font-terminal break-all text-xl text-crt-amber">
+                <span className="break-all font-terminal text-xl text-crt-amber">
                   {pick.originalUrl}
                 </span>
                 <span className="font-terminal text-base text-crt-bone/70">
-                  host: {pick.host} · 点击在新窗口打开 Wayback 快照 ↗
+                  {t("tm.result.host", { host: pick.host })}
                 </span>
               </div>
             </motion.a>
@@ -156,18 +160,22 @@ export function TimeMachine() {
 }
 
 function MosaicLoader() {
+  const { t } = useI18n();
   const [phase, setPhase] = useState(0);
-  const phases = [
-    "DIALING INTERNET ARCHIVE ...",
-    "HANDSHAKE ... 56k",
-    "CDX LOOKUP — RACING 6 DOMAINS",
-    "LONG HAUL TO web.archive.org ...",
-    "STILL LISTENING FOR A CARRIER ...",
+  const phaseKeys = [
+    "tm.loader.1",
+    "tm.loader.2",
+    "tm.loader.3",
+    "tm.loader.4",
+    "tm.loader.5",
   ];
   useEffect(() => {
-    const id = setInterval(() => setPhase((p) => (p + 1) % phases.length), 3200);
+    const id = setInterval(
+      () => setPhase((p) => (p + 1) % phaseKeys.length),
+      3200,
+    );
     return () => clearInterval(id);
-  }, [phases.length]);
+  }, [phaseKeys.length]);
 
   return (
     <div className="flex items-center gap-3">
@@ -177,7 +185,8 @@ function MosaicLoader() {
             key={i}
             className="block h-4 w-2"
             style={{
-              background: i % 3 === 0 ? "#c9a227" : i % 3 === 1 ? "#6b8e5a" : "#7a2828",
+              background:
+                i % 3 === 0 ? "#c9a227" : i % 3 === 1 ? "#6b8e5a" : "#7a2828",
             }}
             animate={{ opacity: [0.2, 1, 0.2] }}
             transition={{ duration: 0.9, delay: i * 0.05, repeat: Infinity }}
@@ -185,7 +194,7 @@ function MosaicLoader() {
         ))}
       </div>
       <span className="font-pixel text-[0.62rem] tracking-widest">
-        {phases[phase]}
+        {t(phaseKeys[phase])}
       </span>
     </div>
   );
