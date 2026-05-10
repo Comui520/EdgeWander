@@ -4,7 +4,7 @@
 
 English · [中文](./README.md)
 
-**[screenshot of the home page — showing the CRT grain, the control-strip nav, the big WANDER button]**
+<img src="./homepage.png" title="homepage" alt="homepage" data-align="center">
 
 ---
 
@@ -26,13 +26,13 @@ Two features lean into that feeling:
 
 ### Leave your name
 
-**[screenshot of the "leave your name" modal]**
+<img src="./carveyourname.png" title="carveyourname" alt="carveyourname" data-align="center">
 
 A guestbook. Click the rust-colored button on the home page, type your name (and a line, if you want), submit. Everyone who has ever done this is stored forever.
 
 ### Hall of Fame
 
-**[screenshot of the Hall of Fame — names floating as stars in a dark sky]**
+<img src="./hallofname.png" title="hallofname" alt="hallofname" data-align="center">
 
 Every signature floats as a star in a dark phosphor sky. They drift, they occasionally glitch out from "bad signal," and they stabilize again. The more people sign, the denser the night.
 
@@ -40,23 +40,30 @@ Every signature floats as a star in a dark phosphor sky. They drift, they occasi
 
 ## Details worth pointing out
 
-- **Bilingual, no reload.** A tiny DIP-switch toggle in the top right flips every string on the site between English and 中文 — body copy, buttons, error messages, loading phases, modal, footer. **[close-up of the language switch + a before/after of the toggle]**
+- **Bilingual, no reload.** A tiny DIP-switch toggle in the top right flips every string on the site between English and 中文 — body copy, buttons, error messages, loading phases, modal, footer. 
+  
+  - ![en](./en.png "en")
+  - ![zh](./zh.png "zh")
 
-- **Real visitor counter.** Upstash Redis `INCR` backs a 7-digit pixel flap counter at the top of the home page. No analytics, no tracking — just one integer that ticks up when someone new shows up.
+- **Real visitor counter.** Upstash Redis `INCR` backs a 7-digit pixel flap counter at the top of the home page. No analytics, no tracking — just one integer that ticks up when someone new shows up. 
+  
+  - ![count](./count.png "count")
 
-- **The time machine is actually a race.** Pressing WANDER fires six parallel CDX queries to the Internet Archive against random nostalgic domains. First one to come back wins, the rest are aborted. A cold CDX call from mainland China can take 15-50 seconds for a single domain — racing six hides the long tail and usually lands a result in 12-18 seconds.
+- **The time machine is actually a race.** Pressing WANDER fires six parallel CDX queries to the Internet Archive against random nostalgic domains. First one to come back wins, the rest are aborted. A cold CDX call from mainland China can take 15-50 seconds for a single domain — racing six hides the long tail and usually lands a result in 12-18 seconds.  
+  
+  - ![wander](./wander.png "wander")
 
 - **Zero images, anywhere.** Every retro effect — scanlines, noise, beveled metal, the DIP switch, the cursor reticle, the manufacturer's nameplate in the footer — is CSS, SVG, and DOM. No textures, no pre-rendered sprites. First-load JS is about 140KB.
 
 - **Custom cursor.** A pixel crosshair with a phosphor trail follows the mouse. Over interactive elements it turns green and snaps into a tighter "lock" state; mouse-down collapses it into a red shutter. Respects `prefers-reduced-motion` and quietly disables itself on touch.
 
-**[screenshot or GIF of the pixel cursor hovering over a button — showing the green LOCK state]**
+<img src="./cursor.gif" title="cursor" alt="cursor" data-align="center">
 
 ---
 
 ## Try it
 
-Live site: **[your Vercel deployment URL]**
+Live site:  https://edge-wander.vercel.app/
 
 Or run it locally — works without any env vars thanks to an in-memory Redis fallback. See [SETUP.md](./SETUP.md) for the full Upstash + Vercel walkthrough.
 

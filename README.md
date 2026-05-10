@@ -4,7 +4,7 @@
 
 [English](./README-en.md) · 中文
 
-**[放首页顶部的整体截图，展示 CRT 质感、控制条导航、巨大的随机穿越按钮]**
+<img src="./homepage.png" title="homepage" alt="homepage" data-align="center">
 
 ---
 
@@ -26,13 +26,13 @@ EdgeWander 是一半博物馆、一半神龛：按下按钮，去拜访一个鬼
 
 ### 青史留名
 
-**[放「青史留名」弹窗的截图]**
+<img src="./carveyourname.png" title="carveyourname" alt="carveyourname" data-align="center">
 
 一个留言簿。点首页上那颗锈红色的按钮，输入你的名字（愿意的话再留一句话），提交。所有按过这个按钮的人，会被永远记下。
 
 ### 名人堂
 
-**[放名人堂页面的截图，星云漂浮的名字]**
+![hallofname](./hallofname.png "hallofname")
 
 每一个留名都是深色磷光夜空里的一颗星，飘动着，偶尔因为「信号不好」短暂扭曲，然后又稳定下来。签名的人越多，这片夜空就越密。
 
@@ -40,23 +40,30 @@ EdgeWander 是一半博物馆、一半神龛：按下按钮，去拜访一个鬼
 
 ## 一些值得一提的细节
 
-- **无需刷新的双语切换。** 右上角那个小小的 DIP 拨码开关，拨一下整站文案就在中文和英文之间切换 —— 涵盖正文、按钮、错误提示、加载阶段、弹窗、页脚全部字符串。**[放语言切换按钮的特写 + 切换前后对比]**
+- **无需刷新的双语切换。** 右上角那个小小的 DIP 拨码开关，拨一下整站文案就在中文和英文之间切换 —— 涵盖正文、按钮、错误提示、加载阶段、弹窗、页脚全部字符串。
+  
+  - ![en](./en.png "en")
+  - ![zh](./zh.png "zh")
 
 - **真·访客计数。** Upstash Redis `INCR` 在后端递增一个整数，首页顶部是一个 7 位的像素翻字跳字牌。没有 analytics、没有 tracking —— 只是一个每有人来就 +1 的整数。
+  
+  - ![count](./count.png "count")
 
 - **时光机本质上是一场赛跑。** 按下「穿越」后，前端向 6 个随机老域名同时发起 CDX 查询，最快返回的一个赢，其他直接 abort。从中国大陆到 `web.archive.org` 单次 CDX 可能要 15-50 秒，但六个一起跑，通常 12-18 秒就能命中第一个结果。
+  
+  - ![wander](./wander.png "wander")
 
 - **整站零图片。** 所有复古效果 —— 扫描线、噪点、金属斜边、DIP 开关、鼠标准星、页脚铭牌 —— 全部由 CSS、SVG 和 DOM 拼出来。没有任何贴图、没有预渲染精灵图。整站首屏 JS 大约 140KB。
 
 - **自定义鼠标指针。** 一颗像素十字准星跟着鼠标，后面拖着一条磷光残影。悬停在可交互元素上会切换成磷光绿并收紧成锁定状态。尊重 `prefers-reduced-motion`，触屏设备自动关闭。
 
-**[放鼠标指针特效的截图 / GIF，悬停在按钮上的 "lock" 状态]**
+<img src="./cursor.gif" title="cursor" alt="cursor" data-align="center">
 
 ---
 
 ## 运行它
 
-线上站点：**[放线上 Vercel 部署链接]**
+线上站点： https://edge-wander.vercel.app/
 
 或者在本地跑 —— 不配任何环境变量也能直接 `npm run dev`，会自动回落到内存 Redis。部署和 Upstash 的完整步骤见 [SETUP.md](./SETUP.md)。
 
@@ -73,17 +80,17 @@ npm run dev
 
 ## 技术栈
 
-| 层 | 方案 |
-| --- | --- |
-| 框架 | Next.js 14（App Router） |
-| 运行时 | 所有 API 路由使用 Edge Runtime |
-| 语言 | TypeScript |
-| 样式 | Tailwind CSS + 手写 CSS 负责 CRT 特效 |
-| 动画 | Framer Motion |
-| 字体 | Press Start 2P · VT323（通过 `next/font` 自托管） |
-| 数据库 | Upstash Redis（本地开发透明回落到内存实现） |
-| 存档源 | Internet Archive CDX Server API |
-| 部署 | Vercel |
+| 层   | 方案                                         |
+| --- | ------------------------------------------ |
+| 框架  | Next.js 14（App Router）                     |
+| 运行时 | 所有 API 路由使用 Edge Runtime                   |
+| 语言  | TypeScript                                 |
+| 样式  | Tailwind CSS + 手写 CSS 负责 CRT 特效            |
+| 动画  | Framer Motion                              |
+| 字体  | Press Start 2P · VT323（通过 `next/font` 自托管） |
+| 数据库 | Upstash Redis（本地开发透明回落到内存实现）               |
+| 存档源 | Internet Archive CDX Server API            |
+| 部署  | Vercel                                     |
 
 所有复古效果都是纯 CSS/SVG，不引入任何图片。整套美术大约 500 行 CSS，集中在 [`src/app/globals.css`](./src/app/globals.css)。
 
