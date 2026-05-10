@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- outer bezel: same dark as the site's deepest shadow -->
+  <rect width="16" height="16" fill="#0d0f08"/>
+  <!-- top bezel highlight — 1px of lighter metal to imply a 3D edge -->
+  <rect x="1" y="1" width="14" height="1" fill="#3a3528"/>
+  <!-- phosphor screen: EdgeWander amber -->
+  <rect x="2" y="2" width="12" height="12" fill="#c9a227"/>
+  <!-- 1-pixel specular highlights along top/left so the screen reads as glass -->
+  <rect x="2" y="2" width="12" height="1" fill="#f2d06b"/>
+  <rect x="2" y="2" width="1" height="12" fill="#d9b43a"/>
+  <!-- three faint scanlines — the site's signature CRT grid -->
+  <rect x="2" y="5" width="12" height="1" fill="#1a1710" opacity="0.35"/>
+  <rect x="2" y="9" width="12" height="1" fill="#1a1710" opacity="0.35"/>
+  <rect x="2" y="13" width="12" height="1" fill="#1a1710" opacity="0.35"/>
+  <!-- signal-lock pixel: phosphor green, same as the cursor's HOVER state -->
+  <rect x="7" y="7" width="2" height="2" fill="#6b8e5a"/>
+</svg>
