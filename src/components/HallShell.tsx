@@ -48,6 +48,10 @@ export function HallShell({
 
       <NameSky pinned={pinned} recent={recent} />
 
+      <p className="font-terminal text-base text-crt-bone/50">
+        ▸ {t("hall.hint")}
+      </p>
+
       {isEmpty && (
         <p className="font-terminal text-base text-crt-bone/50">
           {t("hall.empty")}

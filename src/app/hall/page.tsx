@@ -74,8 +74,12 @@ const DEMO_RECENT: NameEntry[] = [
 export default async function HallPage() {
   const { pinned, recent, total } = await loadInitial();
   const isEmpty = pinned.length === 0 && recent.length === 0;
-  const pinnedSeed = pinned.length > 0 ? pinned : DEMO_PINNED;
-  const recentSeed = recent.length > 0 ? recent : DEMO_RECENT;
+  // Demo data is an all-or-nothing affair: if ANY real signer exists, we show
+  // an honest (possibly sparse) starfield rather than padding it with fake
+  // names. Otherwise, on a fresh deploy, the demo split shows the visual
+  // treatment so a first-time visitor understands the shape of the feature.
+  const pinnedSeed = isEmpty ? DEMO_PINNED : pinned;
+  const recentSeed = isEmpty ? DEMO_RECENT : recent;
   return (
     <HallShell
       pinned={pinnedSeed}

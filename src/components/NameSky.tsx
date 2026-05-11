@@ -2,12 +2,14 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { NameCard, type CardEntry } from "./NameCard";
 
 type Entry = { name: string; message: string; at: number };
 
 type FloatingEntry = Entry & {
   id: number;
   pinned: boolean;
+  pinnedIndex?: number;
   // 0-100 % of container
   x: number;
   y: number;
@@ -37,6 +39,7 @@ export function NameSky({
   const [liveRecent, setLiveRecent] = useState<Entry[]>(recent);
   const [revealed, setRevealed] = useState(false);
   const [glitched, setGlitched] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<CardEntry | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Fetch-then-reveal: start dark, show "tuning" animation, then fade in.
@@ -48,11 +51,15 @@ export function NameSky({
       .then((r) => r.json())
       .then((data: { pinned?: Entry[]; recent?: Entry[] }) => {
         if (cancelled) return;
-        if (Array.isArray(data.pinned) && data.pinned.length > 0) {
-          setLivePinned(data.pinned);
-        }
-        if (Array.isArray(data.recent) && data.recent.length > 0) {
-          setLiveRecent(data.recent);
+        // Demo data is all-or-nothing. As soon as the server confirms any
+        // real signer exists, BOTH lists switch to live data — even if
+        // `recent` is legitimately empty — so we don't mix fake names with
+        // real ones.
+        const livePinnedArr = Array.isArray(data.pinned) ? data.pinned : [];
+        const liveRecentArr = Array.isArray(data.recent) ? data.recent : [];
+        if (livePinnedArr.length > 0 || liveRecentArr.length > 0) {
+          setLivePinned(livePinnedArr);
+          setLiveRecent(liveRecentArr);
         }
       })
       .catch(() => {});
@@ -75,6 +82,7 @@ export function NameSky({
         ...e,
         id: out.length,
         pinned: true,
+        pinnedIndex: i + 1,
         x: hash(seed * 7) * 80 + 10,
         y: hash(seed * 11) * 70 + 15,
         depth: 0.85 + hash(seed * 13) * 0.15,
@@ -220,48 +228,55 @@ export function NameSky({
             }
             title={f.message ? `${f.name} — ${f.message}` : f.name}
           >
-            <span
-              className={f.pinned ? "font-pixel" : "name-glitch font-terminal"}
-              data-text={f.name}
-              data-glitch={isGlitch ? "1" : "0"}
+            <button
+              type="button"
+              onClick={() =>
+                setSelected({
+                  name: f.name,
+                  message: f.message,
+                  at: f.at,
+                  pinned: f.pinned,
+                  pinnedIndex: f.pinnedIndex,
+                })
+              }
+              className="block cursor-pointer bg-transparent p-0 text-inherit outline-none transition-transform duration-200 hover:scale-[1.12] focus-visible:scale-[1.12]"
               style={{
-                position: "relative",
-                display: "inline-block",
-                letterSpacing: f.pinned ? "0.06em" : undefined,
+                // The button reuses the animated parent's color/text-shadow,
+                // so no chrome of its own — just a larger hit target.
+                font: "inherit",
+                color: "inherit",
+                textShadow: "inherit",
+                border: "none",
+                letterSpacing: "inherit",
               }}
+              aria-label={f.name}
             >
-              {f.pinned && (
-                <span
-                  aria-hidden
-                  style={{
-                    color: PINNED_COLOR,
-                    marginRight: 6,
-                    opacity: 0.65,
-                    fontSize: "0.7em",
-                  }}
-                >
-                  ✦
-                </span>
-              )}
-              {f.name}
-            </span>
-            {f.message && (
-              <div
-                className="font-terminal"
+              <span
+                className={f.pinned ? "font-pixel" : "name-glitch font-terminal"}
+                data-text={f.name}
+                data-glitch={isGlitch ? "1" : "0"}
                 style={{
-                  fontSize: Math.max(11, f.fontSize * 0.55),
-                  opacity: f.pinned ? 0.9 : 0.7,
-                  marginTop: 2,
-                  maxWidth: 220,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  color: f.pinned ? "#f5e1c4" : "#d9c9a3",
+                  position: "relative",
+                  display: "inline-block",
+                  letterSpacing: f.pinned ? "0.06em" : undefined,
                 }}
               >
-                「{f.message}」
-              </div>
-            )}
+                {f.pinned && (
+                  <span
+                    aria-hidden
+                    style={{
+                      color: PINNED_COLOR,
+                      marginRight: 6,
+                      opacity: 0.65,
+                      fontSize: "0.7em",
+                    }}
+                  >
+                    ✦
+                  </span>
+                )}
+                {f.name}
+              </span>
+            </button>
           </motion.div>
         );
       })}
@@ -275,6 +290,8 @@ export function NameSky({
             "repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0 1px, rgba(0,0,0,0) 2px 3px)",
         }}
       />
+
+      <NameCard entry={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
