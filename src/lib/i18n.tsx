@@ -67,6 +67,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "modal.status.ok": "✓ 已刻入历史",
     "modal.status.err": "! 写入失败",
     "modal.status.idle": "按 ESC 或点外部关闭",
+    "modal.status.tooFast": "! 手速太快。{sec}s 后再试。",
+    "modal.status.daily": "! 今天已留过太多次了。明天再来。",
+    "modal.status.noLinks": "! 此处不能留外链。",
+    "modal.status.pinned": "✦ 你是前 20 位永恒刻名者之一。",
+    "modal.counter": "{n}/{max}",
 
     "hall.title": "✧ 名 人 堂",
     "hall.subtitle":
@@ -131,6 +136,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "modal.status.ok": "✓ ETCHED INTO HISTORY",
     "modal.status.err": "! WRITE FAILED",
     "modal.status.idle": "ESC or click outside to close",
+    "modal.status.tooFast": "! Too fast. Try again in {sec}s.",
+    "modal.status.daily": "! Too many entries today. Come back tomorrow.",
+    "modal.status.noLinks": "! No links allowed.",
+    "modal.status.pinned": "✦ You are among the first 20 — eternal.",
+    "modal.counter": "{n}/{max}",
 
     "hall.title": "✧ HALL OF FAME",
     "hall.subtitle":

@@ -4,13 +4,25 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 
+const NAME_MAX = 24;
+const MESSAGE_MAX = 140;
+
+type Status =
+  | { kind: "idle" }
+  | { kind: "writing" }
+  | { kind: "ok"; pinned: boolean }
+  | { kind: "err" }
+  | { kind: "tooFast"; sec: number }
+  | { kind: "daily" }
+  | { kind: "noLinks" };
+
 export function LeaveNameModal() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<"idle" | "ok" | "err">("idle");
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const submitting = status.kind === "writing";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -23,28 +35,76 @@ export function LeaveNameModal() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || submitting) return;
-    setSubmitting(true);
-    setStatus("idle");
+    setStatus({ kind: "writing" });
     try {
       const res = await fetch("/api/names", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name, message }),
       });
-      if (!res.ok) {
-        setStatus("err");
+
+      if (res.status === 429) {
+        const data = await res
+          .json()
+          .catch(() => ({ error: "too_fast", retryAfter: 60 }));
+        if (data.error === "daily_limit") {
+          setStatus({ kind: "daily" });
+        } else {
+          setStatus({ kind: "tooFast", sec: Number(data.retryAfter) || 60 });
+        }
         return;
       }
-      setStatus("ok");
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.error === "no_links") {
+          setStatus({ kind: "noLinks" });
+          return;
+        }
+        setStatus({ kind: "err" });
+        return;
+      }
+
+      const data = (await res.json()) as { pinned?: boolean };
+      setStatus({ kind: "ok", pinned: Boolean(data.pinned) });
       setName("");
       setMessage("");
-      setTimeout(() => setOpen(false), 1200);
+      // Keep the modal open a bit longer when pinned so the user actually
+      // reads the "you're eternal" line. Otherwise auto-close quickly.
+      setTimeout(() => setOpen(false), data.pinned ? 2600 : 1200);
     } catch {
-      setStatus("err");
-    } finally {
-      setSubmitting(false);
+      setStatus({ kind: "err" });
     }
   }
+
+  const statusText = (() => {
+    switch (status.kind) {
+      case "writing":
+        return t("modal.status.writing");
+      case "ok":
+        return status.pinned
+          ? t("modal.status.pinned")
+          : t("modal.status.ok");
+      case "err":
+        return t("modal.status.err");
+      case "tooFast":
+        return t("modal.status.tooFast", { sec: status.sec });
+      case "daily":
+        return t("modal.status.daily");
+      case "noLinks":
+        return t("modal.status.noLinks");
+      case "idle":
+      default:
+        return t("modal.status.idle");
+    }
+  })();
+
+  const isPinnedOk = status.kind === "ok" && status.pinned;
+  const isError =
+    status.kind === "err" ||
+    status.kind === "tooFast" ||
+    status.kind === "daily" ||
+    status.kind === "noLinks";
 
   return (
     <>
@@ -89,37 +149,67 @@ export function LeaveNameModal() {
               </div>
 
               <label className="mb-3 block font-terminal text-base text-crt-bone/80">
-                {t("modal.name")}
+                <div className="flex items-baseline justify-between">
+                  <span>{t("modal.name")}</span>
+                  <span
+                    className="font-pixel text-[0.55rem] tracking-widest"
+                    style={{
+                      color:
+                        name.length >= NAME_MAX ? "#7a2828" : "rgba(217,201,163,0.55)",
+                    }}
+                  >
+                    {t("modal.counter", { n: name.length, max: NAME_MAX })}
+                  </span>
+                </div>
                 <input
                   className="retro-input mt-1"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  maxLength={24}
+                  maxLength={NAME_MAX}
                   placeholder={t("modal.namePlaceholder")}
                   autoFocus
                 />
               </label>
 
               <label className="mb-4 block font-terminal text-base text-crt-bone/80">
-                {t("modal.message")}
+                <div className="flex items-baseline justify-between">
+                  <span>{t("modal.message")}</span>
+                  <span
+                    className="font-pixel text-[0.55rem] tracking-widest"
+                    style={{
+                      color:
+                        message.length >= MESSAGE_MAX
+                          ? "#7a2828"
+                          : "rgba(217,201,163,0.55)",
+                    }}
+                  >
+                    {t("modal.counter", { n: message.length, max: MESSAGE_MAX })}
+                  </span>
+                </div>
                 <textarea
                   className="retro-input mt-1 h-24 resize-none"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  maxLength={140}
+                  maxLength={MESSAGE_MAX}
                   placeholder={t("modal.msgPlaceholder")}
                 />
               </label>
 
               <div className="flex items-center justify-between gap-3">
-                <span className="font-terminal text-sm text-crt-bone/60">
-                  {submitting
-                    ? t("modal.status.writing")
-                    : status === "ok"
-                    ? t("modal.status.ok")
-                    : status === "err"
-                    ? t("modal.status.err")
-                    : t("modal.status.idle")}
+                <span
+                  className="font-terminal text-sm"
+                  style={{
+                    color: isError
+                      ? "#e07a5a"
+                      : isPinnedOk
+                      ? "#f2d06b"
+                      : "rgba(217,201,163,0.6)",
+                    textShadow: isPinnedOk
+                      ? "0 0 6px rgba(242, 208, 107, 0.7)"
+                      : undefined,
+                  }}
+                >
+                  {statusText}
                 </span>
                 <button
                   type="submit"

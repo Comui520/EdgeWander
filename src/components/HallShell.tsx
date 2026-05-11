@@ -7,16 +7,18 @@ import { useI18n } from "@/lib/i18n";
 
 /**
  * Client-side shell for the Hall page. The server component pre-fetches
- * entries from Redis and hands them as `seed`; we then pass them through
- * to NameSky (which also re-fetches live). Splitting this off the server
- * page lets us consume the i18n context for bilingual copy.
+ * both the permanent pinned list and the rolling recent list and hands
+ * them as seed; NameSky also re-fetches live to catch anything written
+ * after render.
  */
 export function HallShell({
-  seed,
+  pinned,
+  recent,
   total,
   isEmpty,
 }: {
-  seed: NameEntry[];
+  pinned: NameEntry[];
+  recent: NameEntry[];
   total: number;
   isEmpty: boolean;
 }) {
@@ -44,7 +46,7 @@ export function HallShell({
         </div>
       </header>
 
-      <NameSky fallback={seed} />
+      <NameSky pinned={pinned} recent={recent} />
 
       {isEmpty && (
         <p className="font-terminal text-base text-crt-bone/50">

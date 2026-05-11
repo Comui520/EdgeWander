@@ -7,6 +7,7 @@ type Entry = { name: string; message: string; at: number };
 
 type FloatingEntry = Entry & {
   id: number;
+  pinned: boolean;
   // 0-100 % of container
   x: number;
   y: number;
@@ -15,15 +16,25 @@ type FloatingEntry = Entry & {
   fontSize: number;
 };
 
-const COLORS = ["#c9a227", "#6b8e5a", "#d9c9a3", "#7a2828", "#3a5a5a"];
+// Recent stars get the full palette for visual noise; pinned stars always
+// use amber — the CRT's "this is important" color — plus a bigger halo.
+const RECENT_COLORS = ["#c9a227", "#6b8e5a", "#d9c9a3", "#7a2828", "#3a5a5a"];
+const PINNED_COLOR = "#f2d06b"; // a richer, brighter amber
 
 function hash(n: number): number {
   const x = Math.sin(n * 9301 + 49297) * 233280;
   return x - Math.floor(x);
 }
 
-export function NameSky({ fallback }: { fallback: Entry[] }) {
-  const [entries, setEntries] = useState<Entry[]>(fallback);
+export function NameSky({
+  pinned,
+  recent,
+}: {
+  pinned: Entry[];
+  recent: Entry[];
+}) {
+  const [livePinned, setLivePinned] = useState<Entry[]>(pinned);
+  const [liveRecent, setLiveRecent] = useState<Entry[]>(recent);
   const [revealed, setRevealed] = useState(false);
   const [glitched, setGlitched] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -35,10 +46,13 @@ export function NameSky({ fallback }: { fallback: Entry[] }) {
 
     fetch("/api/names?limit=160", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data: { entries: Entry[] }) => {
+      .then((data: { pinned?: Entry[]; recent?: Entry[] }) => {
         if (cancelled) return;
-        if (Array.isArray(data.entries) && data.entries.length > 0) {
-          setEntries(data.entries);
+        if (Array.isArray(data.pinned) && data.pinned.length > 0) {
+          setLivePinned(data.pinned);
+        }
+        if (Array.isArray(data.recent) && data.recent.length > 0) {
+          setLiveRecent(data.recent);
         }
       })
       .catch(() => {});
@@ -49,36 +63,62 @@ export function NameSky({ fallback }: { fallback: Entry[] }) {
     };
   }, []);
 
-  // Randomly flash the glitch decoration on a few names at a time.
+  // Build floating layout with pinned first (lower IDs), then recent.
+  const floating = useMemo<FloatingEntry[]>(() => {
+    const out: FloatingEntry[] = [];
+
+    livePinned.forEach((e, i) => {
+      const seed = i + 1;
+      // Pinned stars are always "near" (high depth) and larger, so they
+      // dominate the composition. Spread them roughly across the canvas.
+      out.push({
+        ...e,
+        id: out.length,
+        pinned: true,
+        x: hash(seed * 7) * 80 + 10,
+        y: hash(seed * 11) * 70 + 15,
+        depth: 0.85 + hash(seed * 13) * 0.15,
+        driftSeed: hash(seed * 5),
+        fontSize: 22 + hash(seed * 3) * 10,
+      });
+    });
+
+    liveRecent.forEach((e, i) => {
+      const seed = i + 101; // offset so pinned/recent seeds don't collide
+      const depth = hash(seed * 3);
+      out.push({
+        ...e,
+        id: out.length,
+        pinned: false,
+        x: hash(seed) * 92 + 4,
+        y: hash(seed * 2) * 86 + 7,
+        depth,
+        driftSeed: hash(seed * 5),
+        fontSize: 14 + depth * 14,
+      });
+    });
+
+    return out;
+  }, [livePinned, liveRecent]);
+
+  // Randomly flash the glitch decoration — but ONLY on recent stars.
+  // Pinned signers are promised to shine forever, so they never glitch.
   useEffect(() => {
-    if (entries.length === 0) return;
+    const glitchable = floating.filter((f) => !f.pinned);
+    if (glitchable.length === 0) return;
     const interval = setInterval(() => {
       const next = new Set<number>();
-      const picks = Math.min(3, Math.max(1, Math.floor(entries.length / 30)));
+      const picks = Math.min(3, Math.max(1, Math.floor(glitchable.length / 30)));
       for (let i = 0; i < picks; i++) {
-        next.add(Math.floor(Math.random() * entries.length));
+        const pickedId =
+          glitchable[Math.floor(Math.random() * glitchable.length)].id;
+        next.add(pickedId);
       }
       setGlitched(next);
       setTimeout(() => setGlitched(new Set()), 800);
     }, 2600);
     return () => clearInterval(interval);
-  }, [entries.length]);
-
-  const floating = useMemo<FloatingEntry[]>(() => {
-    return entries.map((e, i) => {
-      const seed = i + 1;
-      const depth = hash(seed * 3);
-      return {
-        ...e,
-        id: i,
-        x: hash(seed) * 92 + 4,
-        y: hash(seed * 2) * 86 + 7,
-        depth,
-        driftSeed: hash(seed * 5),
-        fontSize: 14 + depth * 18,
-      };
-    });
-  }, [entries]);
+  }, [floating]);
 
   return (
     <div
@@ -120,8 +160,18 @@ export function NameSky({ fallback }: { fallback: Entry[] }) {
       />
 
       {floating.map((f) => {
-        const isGlitch = glitched.has(f.id);
-        const color = COLORS[f.id % COLORS.length];
+        const isGlitch = !f.pinned && glitched.has(f.id);
+        const color = f.pinned
+          ? PINNED_COLOR
+          : RECENT_COLORS[f.id % RECENT_COLORS.length];
+
+        // Pinned stars get a bigger, warmer halo and their own pulse.
+        const textShadow = f.pinned
+          ? `0 0 10px ${color}, 0 0 22px rgba(242, 208, 107, 0.55), 0 0 2px #000`
+          : `0 0 6px ${color}66, 0 0 2px #000`;
+
+        const brightness = f.pinned ? 1.15 : 0.6 + f.depth * 0.7;
+
         return (
           <motion.div
             key={f.id}
@@ -131,31 +181,68 @@ export function NameSky({ fallback }: { fallback: Entry[] }) {
               top: `${f.y}%`,
               fontSize: f.fontSize,
               color,
-              textShadow: `0 0 6px ${color}66, 0 0 2px #000`,
-              filter: `brightness(${0.6 + f.depth * 0.7})`,
-              zIndex: Math.round(f.depth * 10),
+              textShadow,
+              filter: `brightness(${brightness})`,
+              zIndex: f.pinned ? 20 + Math.round(f.depth * 5) : Math.round(f.depth * 10),
             }}
             initial={{ opacity: 0, scale: 0.6 }}
-            animate={{
-              opacity: revealed ? 0.4 + f.depth * 0.6 : 0,
-              scale: 1,
-              x: [0, Math.sin(f.driftSeed * 6.28) * 12, 0],
-              y: [0, Math.cos(f.driftSeed * 6.28) * 10, 0],
-            }}
-            transition={{
-              opacity: { duration: 1.6, delay: f.depth * 0.5 },
-              scale: { duration: 0.6 },
-              x: { duration: 9 + f.driftSeed * 8, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 11 + f.driftSeed * 6, repeat: Infinity, ease: "easeInOut" },
-            }}
+            animate={
+              f.pinned
+                ? {
+                    // Permanent: breathe softly, never drift far, never dim.
+                    opacity: revealed ? [0.92, 1, 0.92] : 0,
+                    scale: revealed ? [1, 1.04, 1] : 0.6,
+                    x: [0, Math.sin(f.driftSeed * 6.28) * 4, 0],
+                    y: [0, Math.cos(f.driftSeed * 6.28) * 3, 0],
+                  }
+                : {
+                    // Transient: drift, fade by depth.
+                    opacity: revealed ? 0.4 + f.depth * 0.6 : 0,
+                    scale: 1,
+                    x: [0, Math.sin(f.driftSeed * 6.28) * 12, 0],
+                    y: [0, Math.cos(f.driftSeed * 6.28) * 10, 0],
+                  }
+            }
+            transition={
+              f.pinned
+                ? {
+                    opacity: { duration: 4.5, repeat: Infinity, ease: "easeInOut" },
+                    scale: { duration: 4.5, repeat: Infinity, ease: "easeInOut" },
+                    x: { duration: 14 + f.driftSeed * 6, repeat: Infinity, ease: "easeInOut" },
+                    y: { duration: 17 + f.driftSeed * 6, repeat: Infinity, ease: "easeInOut" },
+                  }
+                : {
+                    opacity: { duration: 1.6, delay: f.depth * 0.5 },
+                    scale: { duration: 0.6 },
+                    x: { duration: 9 + f.driftSeed * 8, repeat: Infinity, ease: "easeInOut" },
+                    y: { duration: 11 + f.driftSeed * 6, repeat: Infinity, ease: "easeInOut" },
+                  }
+            }
             title={f.message ? `${f.name} — ${f.message}` : f.name}
           >
             <span
-              className="name-glitch font-terminal"
+              className={f.pinned ? "font-pixel" : "name-glitch font-terminal"}
               data-text={f.name}
               data-glitch={isGlitch ? "1" : "0"}
-              style={{ position: "relative", display: "inline-block" }}
+              style={{
+                position: "relative",
+                display: "inline-block",
+                letterSpacing: f.pinned ? "0.06em" : undefined,
+              }}
             >
+              {f.pinned && (
+                <span
+                  aria-hidden
+                  style={{
+                    color: PINNED_COLOR,
+                    marginRight: 6,
+                    opacity: 0.65,
+                    fontSize: "0.7em",
+                  }}
+                >
+                  ✦
+                </span>
+              )}
               {f.name}
             </span>
             {f.message && (
@@ -163,13 +250,13 @@ export function NameSky({ fallback }: { fallback: Entry[] }) {
                 className="font-terminal"
                 style={{
                   fontSize: Math.max(11, f.fontSize * 0.55),
-                  opacity: 0.7,
+                  opacity: f.pinned ? 0.9 : 0.7,
                   marginTop: 2,
-                  maxWidth: 180,
+                  maxWidth: 220,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
-                  color: "#d9c9a3",
+                  color: f.pinned ? "#f5e1c4" : "#d9c9a3",
                 }}
               >
                 「{f.message}」

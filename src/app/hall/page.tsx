@@ -5,43 +5,63 @@ import { HallShell } from "@/components/HallShell";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function loadInitialEntries(): Promise<{
-  entries: NameEntry[];
+function parseEntry(raw: unknown): NameEntry | null {
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (parsed && typeof parsed.name === "string") {
+      return {
+        name: String(parsed.name).slice(0, 24),
+        message: String(parsed.message ?? "").slice(0, 140),
+        at: Number(parsed.at) || Date.now(),
+      };
+    }
+  } catch {
+    // skip
+  }
+  return null;
+}
+
+async function loadInitial(): Promise<{
+  pinned: NameEntry[];
+  recent: NameEntry[];
   total: number;
 }> {
   try {
     const s = store();
-    const [raw, total] = await Promise.all([
+    const [pinnedRaw, recentRaw, pinnedLen, recentLen] = await Promise.all([
+      s.lrange<string>(KEYS.namesPinned, 0, -1),
       s.lrange<string>(KEYS.names, 0, 119),
+      s.llen(KEYS.namesPinned),
       s.llen(KEYS.names),
     ]);
-    const entries: NameEntry[] = [];
-    for (const row of raw) {
-      try {
-        const parsed = typeof row === "string" ? JSON.parse(row) : row;
-        if (parsed && typeof parsed.name === "string") {
-          entries.push({
-            name: String(parsed.name).slice(0, 24),
-            message: String(parsed.message ?? "").slice(0, 140),
-            at: Number(parsed.at) || Date.now(),
-          });
-        }
-      } catch {
-        // Ignore malformed rows.
-      }
+    const pinned: NameEntry[] = [];
+    for (const row of pinnedRaw) {
+      const e = parseEntry(row);
+      if (e) pinned.push(e);
     }
-    return { entries, total };
+    const recent: NameEntry[] = [];
+    for (const row of recentRaw) {
+      const e = parseEntry(row);
+      if (e) recent.push(e);
+    }
+    return { pinned, recent, total: pinnedLen + recentLen };
   } catch {
-    return { entries: [], total: 0 };
+    return { pinned: [], recent: [], total: 0 };
   }
 }
 
-const DEMO_NAMES: NameEntry[] = [
+// Demo data, used ONLY when the store is empty (fresh deploy, dev fallback).
+// Split into pinned + recent so the visual treatment is still correct in the
+// demo case: the first names shown in the Hall look "eternal", the rest drift.
+const DEMO_PINNED: NameEntry[] = [
   { name: "张三", message: "到此一游", at: 0 },
   { name: "Anon1998", message: "hello from dialup", at: 0 },
   { name: "小王", message: "我曾在这", at: 0 },
   { name: "GhostOfGeocities", message: "the stars remember", at: 0 },
   { name: "李雷", message: "Handshake... 56k", at: 0 },
+];
+
+const DEMO_RECENT: NameEntry[] = [
   { name: "韩梅梅", message: "where did everyone go", at: 0 },
   { name: "NeonPilot", message: "signal received", at: 0 },
   { name: "老网民", message: "1999 never ended", at: 0 },
@@ -52,7 +72,16 @@ const DEMO_NAMES: NameEntry[] = [
 ];
 
 export default async function HallPage() {
-  const { entries, total } = await loadInitialEntries();
-  const seed = entries.length > 0 ? entries : DEMO_NAMES;
-  return <HallShell seed={seed} total={total} isEmpty={entries.length === 0} />;
+  const { pinned, recent, total } = await loadInitial();
+  const isEmpty = pinned.length === 0 && recent.length === 0;
+  const pinnedSeed = pinned.length > 0 ? pinned : DEMO_PINNED;
+  const recentSeed = recent.length > 0 ? recent : DEMO_RECENT;
+  return (
+    <HallShell
+      pinned={pinnedSeed}
+      recent={recentSeed}
+      total={total}
+      isEmpty={isEmpty}
+    />
+  );
 }
