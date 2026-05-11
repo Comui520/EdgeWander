@@ -2,7 +2,7 @@
 
 > A time machine for the forgotten internet — wander back into a random corner of the 1996-2010 web.
 
-English · [中文](./README.md)
+English · [中文](./README-zh.md)
 
 <img src="./homepage.png" title="homepage" alt="homepage" data-align="center">
 

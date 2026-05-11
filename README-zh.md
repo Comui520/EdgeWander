@@ -2,7 +2,7 @@
 
 > 一台挖自废弃硬盘的浏览器 —— 随机穿越回 1996 — 2010 的网页角落。
 
-[English](./README-en.md) · 中文
+[English](./README.md) · 中文
 
 <img src="./homepage.png" title="homepage" alt="homepage" data-align="center">
 
