@@ -1,0 +1,113 @@
+# EdgeWander · 时光机
+
+> 一台挖自废弃硬盘的浏览器 —— 随机穿越回 1996 — 2010 的网页角落。
+
+[English](./README-en.md) · 中文
+
+<img src="./homepage.png" title="homepage" alt="homepage" data-align="center">
+
+---
+
+## 这是什么
+
+EdgeWander 是一个小小的、视觉向的网页玩具。点一下「随机穿越」，它会把你扔进 Internet Archive 某个被遗忘的角落 —— 一个 GeoCities 主页、2001 年的论坛帖、某人早已停更的 LiveJournal、或者 1999 年的中文门户。每一个目的地都是从 Wayback Machine 里真实拉出的存档快照。
+
+整个站点的外观也被做成那个年代的样子：扫描线、磷光烧屏、闪烁的像素字体、一个 DIP 拨码开关切换语言、一个十字准星鼠标。它不像一个网站，更像一台仍然在房间角落里微微发光的老机器。
+
+---
+
+## 这个项目想讲什么
+
+这个站把你送到的绝大多数网页，都是少年、业余爱好者、和如今早已离线的陌生人在很久以前搭出来的。他们用 blinking GIF、访客计数器、webring、留言簿。然后互联网变「专业」了，这些东西被一并推平。
+
+EdgeWander 是一半博物馆、一半神龛：按下按钮，去拜访一个鬼魂。
+
+这里有两个玩法顺着这种感觉在走：
+
+### 青史留名
+
+<img src="./carveyourname.png" title="carveyourname" alt="carveyourname" data-align="center">
+
+一个留言簿。点首页上那颗锈红色的按钮，输入你的名字（愿意的话再留一句话），提交。所有按过这个按钮的人，会被永远记下。
+
+### 名人堂
+
+![hallofname](./hallofname.png "hallofname")
+
+每一个留名都是深色磷光夜空里的一颗星，飘动着，偶尔因为「信号不好」短暂扭曲，然后又稳定下来。签名的人越多，这片夜空就越密。
+
+---
+
+## 一些值得一提的细节
+
+- **无需刷新的双语切换。** 右上角那个小小的 DIP 拨码开关，拨一下整站文案就在中文和英文之间切换 —— 涵盖正文、按钮、错误提示、加载阶段、弹窗、页脚全部字符串。
+  
+  - ![en](./en.png "en")
+  - ![zh](./zh.png "zh")
+
+- **真·访客计数。** Upstash Redis `INCR` 在后端递增一个整数，首页顶部是一个 7 位的像素翻字跳字牌。没有 analytics、没有 tracking —— 只是一个每有人来就 +1 的整数。
+  
+  - ![count](./count.png "count")
+
+- **时光机本质上是一场赛跑。** 按下「穿越」后，前端向 6 个随机老域名同时发起 CDX 查询，最快返回的一个赢，其他直接 abort。从中国大陆到 `web.archive.org` 单次 CDX 可能要 15-50 秒，但六个一起跑，通常 12-18 秒就能命中第一个结果。
+  
+  - ![wander](./wander.png "wander")
+
+- **整站零图片。** 所有复古效果 —— 扫描线、噪点、金属斜边、DIP 开关、鼠标准星、页脚铭牌 —— 全部由 CSS、SVG 和 DOM 拼出来。没有任何贴图、没有预渲染精灵图。整站首屏 JS 大约 140KB。
+
+- **自定义鼠标指针。** 一颗像素十字准星跟着鼠标，后面拖着一条磷光残影。悬停在可交互元素上会切换成磷光绿并收紧成锁定状态。尊重 `prefers-reduced-motion`，触屏设备自动关闭。
+
+<img src="./cursor.gif" title="cursor" alt="cursor" data-align="center">
+
+---
+
+## 运行它
+
+线上站点： https://edge-wander.vercel.app/
+
+或者在本地跑 —— 不配任何环境变量也能直接 `npm run dev`，会自动回落到内存 Redis。部署和 Upstash 的完整步骤见 [SETUP.md](./SETUP.md)。
+
+```bash
+git clone https://github.com/comui520/edgewander.git
+cd edgewander
+npm install
+npm run dev
+```
+
+然后打开 http://localhost:3000。
+
+---
+
+## 技术栈
+
+| 层   | 方案                                         |
+| --- | ------------------------------------------ |
+| 框架  | Next.js 14（App Router）                     |
+| 运行时 | 所有 API 路由使用 Edge Runtime                   |
+| 语言  | TypeScript                                 |
+| 样式  | Tailwind CSS + 手写 CSS 负责 CRT 特效            |
+| 动画  | Framer Motion                              |
+| 字体  | Press Start 2P · VT323（通过 `next/font` 自托管） |
+| 数据库 | Upstash Redis（本地开发透明回落到内存实现）               |
+| 存档源 | Internet Archive CDX Server API            |
+| 部署  | Vercel                                     |
+
+所有复古效果都是纯 CSS/SVG，不引入任何图片。整套美术大约 500 行 CSS，集中在 [`src/app/globals.css`](./src/app/globals.css)。
+
+---
+
+## 开源协议
+
+本项目使用 **源码公开、非商用** 的协议发布。
+
+- ✅ 可以克隆、阅读、fork、自托管、修改、分享
+- ✅ 可以用于个人、教育、艺术用途
+- ❌ 不可出售、不可用于商业产品、不可放在付费墙后
+
+完整条款见 [LICENSE](./LICENSE)。如果你想基于它做商业产品，先开一个 issue 我们聊聊。
+
+---
+
+## 致谢
+
+由 **[comui520](https://github.com/comui520)** 和 Claude 一起做成。真正的功臣是 Internet Archive，以及无数如今仍能被偶然翻到的 1999 年个人主页的无名作者们。愿他们的访客计数器永远在跳。
