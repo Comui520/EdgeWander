@@ -276,6 +276,25 @@ export function NameSky({
                 )}
                 {f.name}
               </span>
+              {f.message && (
+                <div
+                  className="font-terminal"
+                  style={{
+                    fontSize: Math.max(11, f.fontSize * 0.55),
+                    opacity: f.pinned ? 0.9 : 0.7,
+                    marginTop: 2,
+                    maxWidth: 220,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    color: f.pinned ? "#f5e1c4" : "#d9c9a3",
+                    textShadow: "none",
+                    letterSpacing: "normal",
+                  }}
+                >
+                  「{f.message}」
+                </div>
+              )}
             </button>
           </motion.div>
         );

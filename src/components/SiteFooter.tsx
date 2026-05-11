@@ -17,7 +17,7 @@ export function SiteFooter() {
           {t("footer.tag")}
         </p>
 
-        <div className="mt-4 flex flex-wrap items-stretch justify-center gap-2">
+        <div className="mt-4 flex flex-col items-center gap-2">
           {/* Manufacturer's nameplate — the GitHub credit */}
           <div
             className="inline-flex items-center gap-3 border border-black/70 bg-gradient-to-b from-[#3a3528] to-[#1a1710] px-3 py-1.5"
