@@ -75,6 +75,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "hall.empty": "* 当前展示为示例数据。第一个真实留名者将永远闪亮。",
 
     "footer.tag": "[ SIGNAL LOST ] — this CRT has been glowing since 1998.",
+    "footer.tipJar": "投币支持",
     "counter.label": "访客计数",
   },
   en: {
@@ -139,6 +140,7 @@ const DICT: Record<Lang, Record<string, string>> = {
       "* Showing sample data. The first real signer will shine forever.",
 
     "footer.tag": "[ SIGNAL LOST ] — this CRT has been glowing since 1998.",
+    "footer.tipJar": "INSERT COIN",
     "counter.label": "VISITORS",
   },
 };

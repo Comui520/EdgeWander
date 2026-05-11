@@ -22,3 +22,6 @@ next-env.d.ts
 .vercel
 .vscode
 .idea
+
+# transient scratch dir used by claude-code helpers
+.claude-tmp
